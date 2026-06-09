@@ -1,0 +1,1071 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>台股盤前儀表板</title>
+  <style>
+    :root {
+      --bg: #fff8ef;
+      --panel: #ffffff;
+      --ink: #14213d;
+      --muted: #5d667a;
+      --line: #e4dff2;
+      --green: #00a878;
+      --red: #f94144;
+      --amber: #f59f00;
+      --blue: #00a6fb;
+      --pink: #ff4fa3;
+      --violet: #7c3aed;
+      --lime: #8ac926;
+      --cyan: #00d4ff;
+      --shadow: 0 14px 30px rgba(20, 33, 61, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background:
+        linear-gradient(135deg, rgba(255, 79, 163, 0.16), transparent 30%),
+        linear-gradient(225deg, rgba(0, 212, 255, 0.16), transparent 34%),
+        linear-gradient(180deg, #fff8ef 0%, #f4fbff 48%, #fff7fb 100%);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+      line-height: 1.5;
+    }
+
+    main {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 40px;
+    }
+
+    header {
+      background: linear-gradient(120deg, #ffffff 0%, #fff1a8 34%, #b7f8db 64%, #bde0fe 100%);
+      border: 1px solid rgba(20, 33, 61, 0.08);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 18px;
+      padding: 18px;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 28px;
+      line-height: 1.2;
+    }
+
+    h2 {
+      font-size: 18px;
+      margin-bottom: 12px;
+    }
+
+    h3 {
+      font-size: 15px;
+      margin-bottom: 8px;
+    }
+
+    .meta {
+      color: var(--muted);
+      font-size: 14px;
+      text-align: right;
+    }
+
+    .grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .top-grid {
+      grid-template-columns: 1.25fr 0.75fr;
+      margin-bottom: 14px;
+    }
+
+    .market-grid {
+      grid-template-columns: repeat(4, 1fr);
+      margin-bottom: 14px;
+    }
+
+    .visual-grid {
+      grid-template-columns: 1.2fr 0.8fr 0.8fr;
+      margin-bottom: 14px;
+    }
+
+    .main-grid {
+      grid-template-columns: 1fr 1fr;
+      margin-bottom: 14px;
+    }
+
+    .horizon-grid {
+      grid-template-columns: 1fr 1fr;
+      margin-bottom: 14px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .panel.color-panel {
+      overflow: hidden;
+      position: relative;
+    }
+
+    .panel.color-panel::before {
+      content: "";
+      display: block;
+      height: 7px;
+      left: 0;
+      position: absolute;
+      right: 0;
+      top: 0;
+    }
+
+    .panel.hot::before {
+      background: linear-gradient(90deg, var(--pink), #ffbe0b, var(--lime));
+    }
+
+    .panel.cool::before {
+      background: linear-gradient(90deg, var(--cyan), var(--blue), var(--violet));
+    }
+
+    .panel.warn::before {
+      background: linear-gradient(90deg, #ffbe0b, #fb5607, var(--red));
+    }
+
+    .signal {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .signal strong {
+      display: block;
+      font-size: 26px;
+      color: var(--blue);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 28px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: #fff1a8;
+      color: #7a4b00;
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .metric {
+      min-height: 112px;
+      position: relative;
+    }
+
+    .metric .value {
+      font-size: 24px;
+      font-weight: 800;
+      margin: 4px 0 2px;
+    }
+
+    .metric::after {
+      border-radius: 999px;
+      bottom: 14px;
+      content: "";
+      height: 5px;
+      left: 18px;
+      position: absolute;
+      right: 18px;
+    }
+
+    .metric:nth-child(1)::after {
+      background: linear-gradient(90deg, var(--cyan), var(--blue));
+    }
+
+    .metric:nth-child(2)::after {
+      background: linear-gradient(90deg, var(--pink), #ffbe0b);
+    }
+
+    .metric:nth-child(3)::after {
+      background: linear-gradient(90deg, var(--lime), var(--green));
+    }
+
+    .metric:nth-child(4)::after {
+      background: linear-gradient(90deg, var(--violet), var(--red));
+    }
+
+    .metric .note,
+    .muted {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .strategy-card {
+      display: grid;
+      gap: 12px;
+    }
+
+    .strategy-card .label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .strategy-card dl {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+    }
+
+    .strategy-card dl > div {
+      display: grid;
+      grid-template-columns: 92px 1fr;
+      gap: 10px;
+    }
+
+    .strategy-card dt {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .strategy-card dd {
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .watchlist-panel {
+      margin-bottom: 14px;
+    }
+
+    .visual-card {
+      min-height: 164px;
+    }
+
+    .visual-heading {
+      align-items: center;
+      display: flex;
+      gap: 12px;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .visual-mark {
+      align-items: center;
+      border-radius: 8px;
+      color: #ffffff;
+      display: inline-flex;
+      font-size: 15px;
+      font-weight: 900;
+      height: 46px;
+      justify-content: center;
+      width: 56px;
+    }
+
+    .mark-market {
+      background: linear-gradient(135deg, var(--pink), #ffbe0b);
+    }
+
+    .mark-sector {
+      background: linear-gradient(135deg, var(--cyan), var(--violet));
+    }
+
+    .mark-risk {
+      background: linear-gradient(135deg, var(--red), #ffbe0b);
+    }
+
+    .sparkline {
+      align-items: end;
+      display: grid;
+      gap: 6px;
+      grid-template-columns: repeat(10, 1fr);
+      height: 54px;
+      margin-top: 14px;
+    }
+
+    .sparkline span {
+      border-radius: 999px 999px 4px 4px;
+      display: block;
+      min-height: 10px;
+    }
+
+    .sparkline span:nth-child(3n + 1) {
+      background: var(--pink);
+    }
+
+    .sparkline span:nth-child(3n + 2) {
+      background: var(--cyan);
+    }
+
+    .sparkline span:nth-child(3n) {
+      background: var(--lime);
+    }
+
+    .heat-row {
+      display: grid;
+      gap: 8px;
+    }
+
+    .heat-item {
+      display: grid;
+      gap: 7px;
+    }
+
+    .heat-label {
+      display: flex;
+      font-size: 13px;
+      justify-content: space-between;
+    }
+
+    .heat-bar {
+      background: #edf2f7;
+      border-radius: 999px;
+      height: 9px;
+      overflow: hidden;
+    }
+
+    .heat-bar span {
+      display: block;
+      height: 100%;
+    }
+
+    .bar-hot {
+      background: linear-gradient(90deg, var(--pink), #ffbe0b);
+      width: 72%;
+    }
+
+    .bar-cool {
+      background: linear-gradient(90deg, var(--cyan), var(--blue));
+      width: 58%;
+    }
+
+    .bar-watch {
+      background: linear-gradient(90deg, var(--amber), var(--red));
+      width: 44%;
+    }
+
+    .input-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      margin: 12px 0;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--ink);
+      font: inherit;
+      padding: 8px 12px;
+    }
+
+    input {
+      min-height: 42px;
+    }
+
+    textarea {
+      min-height: 96px;
+      resize: vertical;
+    }
+
+    input:focus,
+    textarea:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+      outline: none;
+    }
+
+    button {
+      min-height: 42px;
+      border: 0;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--blue), var(--violet));
+      color: #ffffff;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 800;
+      padding: 8px 14px;
+      white-space: nowrap;
+    }
+
+    button:hover {
+      background: linear-gradient(135deg, #008de0, #6d28d9);
+    }
+
+    .watchlist {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .watchlist-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+
+    .watchlist-item strong {
+      display: block;
+      font-size: 15px;
+    }
+
+    .watchlist-item span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .ghost-button {
+      min-height: 34px;
+      background: #eef2f7;
+      color: var(--muted);
+      padding: 6px 10px;
+    }
+
+    .ghost-button:hover {
+      background: #e2e8f0;
+      color: var(--ink);
+    }
+
+    .advisor-panel {
+      margin-bottom: 14px;
+    }
+
+    .advisor-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .advisor-answer {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: linear-gradient(135deg, #f8fafc, #fff1f8);
+      margin-top: 12px;
+      padding: 12px;
+    }
+
+    .advisor-answer strong {
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .question-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .question-item {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+
+    .question-item strong {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 6px;
+    }
+
+    .question-item p {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .up {
+      color: var(--green);
+    }
+
+    .down {
+      color: var(--red);
+    }
+
+    .watch {
+      color: var(--amber);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid var(--line);
+      padding: 10px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 0;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    li + li {
+      margin-top: 8px;
+    }
+
+    .source-list a {
+      color: var(--blue);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .source-list a:hover {
+      text-decoration: underline;
+    }
+
+    footer {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 14px;
+    }
+
+    @media (max-width: 860px) {
+      header,
+      .signal {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .meta {
+        text-align: left;
+      }
+
+      .top-grid,
+      .visual-grid,
+      .horizon-grid,
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .market-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 560px) {
+      main {
+        width: min(100% - 20px, 1180px);
+        padding-top: 18px;
+      }
+
+      .market-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .input-row,
+      .watchlist-item {
+        grid-template-columns: 1fr;
+      }
+
+      table {
+        font-size: 13px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>台股盤前儀表板</h1>
+        <p class="muted">每日 08:20 自動更新，美股收盤後評估台股開盤前方向。</p>
+      </div>
+      <p class="meta">最近更新：等待每日自動產出<br>收件人：yenhan0918@gmail.com</p>
+    </header>
+
+    <section class="grid top-grid">
+      <div class="panel signal color-panel hot">
+        <div>
+          <h2>今日策略</h2>
+          <strong>等待最新盤前分析</strong>
+          <p class="muted">自動流程會在這裡填入偏多、震盪、偏空或觀望，以及主要判斷理由。</p>
+        </div>
+        <span class="badge">盤前決策</span>
+      </div>
+      <div class="panel color-panel warn">
+        <h2>風險燈號</h2>
+        <ul>
+          <li><span class="watch">匯率：</span>觀察美元與新台幣變化。</li>
+          <li><span class="watch">利率：</span>觀察美債殖利率是否壓抑科技股估值。</li>
+          <li><span class="watch">籌碼：</span>留意台指期與外資動向。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="grid visual-grid">
+      <div class="panel visual-card color-panel hot">
+        <div class="visual-heading">
+          <div>
+            <h2>市場溫度圖</h2>
+            <p class="muted">用色塊快速判斷今天偏進攻、觀望或防守。</p>
+          </div>
+          <span class="visual-mark mark-market">MKT</span>
+        </div>
+        <div class="sparkline" aria-label="市場動能視覺條">
+          <span style="height: 28%"></span>
+          <span style="height: 50%"></span>
+          <span style="height: 42%"></span>
+          <span style="height: 74%"></span>
+          <span style="height: 58%"></span>
+          <span style="height: 88%"></span>
+          <span style="height: 64%"></span>
+          <span style="height: 78%"></span>
+          <span style="height: 46%"></span>
+          <span style="height: 68%"></span>
+        </div>
+      </div>
+      <div class="panel visual-card color-panel cool">
+        <div class="visual-heading">
+          <div>
+            <h2>題材雷達</h2>
+            <p class="muted">AI、半導體、權值電子優先觀察。</p>
+          </div>
+          <span class="visual-mark mark-sector">AI</span>
+        </div>
+        <div class="heat-row">
+          <div class="heat-item">
+            <div class="heat-label"><span>AI 鏈</span><strong>強</strong></div>
+            <div class="heat-bar"><span class="bar-hot"></span></div>
+          </div>
+          <div class="heat-item">
+            <div class="heat-label"><span>權值股</span><strong>中</strong></div>
+            <div class="heat-bar"><span class="bar-cool"></span></div>
+          </div>
+          <div class="heat-item">
+            <div class="heat-label"><span>資金壓力</span><strong>留意</strong></div>
+            <div class="heat-bar"><span class="bar-watch"></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="panel visual-card color-panel warn">
+        <div class="visual-heading">
+          <div>
+            <h2>操作提醒</h2>
+            <p class="muted">多巴胺配色，但決策仍要冷靜。</p>
+          </div>
+          <span class="visual-mark mark-risk">RISK</span>
+        </div>
+        <ul>
+          <li>急拉不追，等回測確認。</li>
+          <li>短線先看量價，長線回到基本面。</li>
+          <li>停損點先寫好，再決定部位。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="grid market-grid">
+      <div class="panel metric color-panel cool">
+        <h3>Nasdaq</h3>
+        <p class="value">--</p>
+        <p class="note">科技股風向</p>
+      </div>
+      <div class="panel metric color-panel hot">
+        <h3>費半指數</h3>
+        <p class="value">--</p>
+        <p class="note">半導體與 AI 鏈</p>
+      </div>
+      <div class="panel metric color-panel hot">
+        <h3>台積電 ADR</h3>
+        <p class="value">--</p>
+        <p class="note">台股權值股線索</p>
+      </div>
+      <div class="panel metric color-panel warn">
+        <h3>美元 / 美債</h3>
+        <p class="value">--</p>
+        <p class="note">資金與估值壓力</p>
+      </div>
+    </section>
+
+    <section class="panel watchlist-panel">
+      <h2>自選標的分析</h2>
+      <p class="muted">輸入你想追蹤的股票名稱或代號，作為每日盤前優先分析參考。</p>
+      <form class="input-row" id="watchlistForm">
+        <input id="watchlistInput" type="text" placeholder="例如：2330 台積電、2317 鴻海、NVDA" autocomplete="off">
+        <button type="submit">加入觀察</button>
+      </form>
+      <div class="watchlist" id="watchlist">
+        <p class="muted" id="emptyWatchlist">尚未加入自選標的。</p>
+      </div>
+    </section>
+
+    <section class="panel advisor-panel">
+      <h2>互動提問區</h2>
+      <p class="muted">輸入你的盤前問題，先取得一版檢查方向；需要即時資料時，再把問題丟給我做完整分析。</p>
+      <form id="advisorForm">
+        <textarea id="advisorInput" placeholder="例如：今天可以追台積電嗎？AI 伺服器族群短線還能進嗎？這檔適合長線分批嗎？"></textarea>
+        <div class="advisor-actions">
+          <button type="submit">產生初步建議</button>
+          <button class="ghost-button" type="button" id="clearQuestions">清除問題</button>
+        </div>
+      </form>
+      <div class="advisor-answer" id="advisorAnswer">
+        <strong>初步建議</strong>
+        <p class="muted">尚未提問。你可以輸入標的、時間週期、想買或想賣的理由，我會先幫你檢查邏輯。</p>
+      </div>
+      <div class="question-list" id="questionList"></div>
+    </section>
+
+    <section class="grid horizon-grid">
+      <div class="panel strategy-card">
+        <div class="label-row">
+          <h2>短線建議</h2>
+          <span class="badge">1-10 個交易日</span>
+        </div>
+        <dl>
+          <div>
+            <dt>適合情境</dt>
+            <dd>美股科技股、費半、台積電 ADR 同步轉強，台指期沒有明顯背離。</dd>
+          </div>
+          <div>
+            <dt>操作方向</dt>
+            <dd>優先觀察 AI、半導體、散熱、電源、權值電子的強勢股，不追開盤急拉。</dd>
+          </div>
+          <div>
+            <dt>進場條件</dt>
+            <dd>開盤後量能放大且站穩前高、均線或盤中支撐，再分批切入。</dd>
+          </div>
+          <div>
+            <dt>退出條件</dt>
+            <dd>跌破盤中支撐、族群轉弱、或美債與美元同步走強時降低部位。</dd>
+          </div>
+        </dl>
+      </div>
+
+      <div class="panel strategy-card">
+        <div class="label-row">
+          <h2>長線建議</h2>
+          <span class="badge">3 個月以上</span>
+        </div>
+        <dl>
+          <div>
+            <dt>適合情境</dt>
+            <dd>產業趨勢明確、營收或獲利持續改善，股價回測關鍵支撐而非短線追價。</dd>
+          </div>
+          <div>
+            <dt>布局方向</dt>
+            <dd>優先挑選現金流穩、競爭力清楚、受 AI 或通路需求帶動的核心公司。</dd>
+          </div>
+          <div>
+            <dt>進場條件</dt>
+            <dd>分批布局，等待大盤拉回、估值回到合理區、或公司基本面確認後加碼。</dd>
+          </div>
+          <div>
+            <dt>檢查條件</dt>
+            <dd>每月檢查營收、毛利率、法人態度與產業訂單，基本面轉弱就重新評估。</dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+
+    <section class="grid main-grid">
+      <div class="panel">
+        <h2>標的分級</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>分類</th>
+              <th>標的</th>
+              <th>進場條件</th>
+              <th>風控</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="up">積極型</td>
+              <td>等待更新</td>
+              <td>需有量價與族群強度確認</td>
+              <td>開盤急拉不追高</td>
+            </tr>
+            <tr>
+              <td>穩健型</td>
+              <td>等待更新</td>
+              <td>回測支撐或均線不破</td>
+              <td>跌破關鍵價位減碼</td>
+            </tr>
+            <tr>
+              <td class="watch">觀望型</td>
+              <td>等待更新</td>
+              <td>等消息或法人方向明朗</td>
+              <td>只看不追</td>
+            </tr>
+            <tr>
+              <td class="down">避開型</td>
+              <td>等待更新</td>
+              <td>題材轉弱或高檔爆量</td>
+              <td>避免攤平</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="panel">
+        <h2>今日觀察重點</h2>
+        <ul>
+          <li>美股科技股是否延續到台股電子權值股。</li>
+          <li>費半與 NVIDIA、AMD 走勢是否支持 AI、半導體、散熱、電源相關族群。</li>
+          <li>台積電 ADR 與台指期是否同方向，若背離則降低追價。</li>
+          <li>美元與美債若同步走強，電子股估值壓力要提高警覺。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>資料來源連結</h2>
+      <table class="source-list">
+        <tbody>
+          <tr>
+            <td>美股指數</td>
+            <td><a href="https://www.cnbc.com/markets/" target="_blank" rel="noreferrer">CNBC Markets</a></td>
+          </tr>
+          <tr>
+            <td>費半與科技股</td>
+            <td><a href="https://www.marketwatch.com/investing/index/sox" target="_blank" rel="noreferrer">MarketWatch SOX</a></td>
+          </tr>
+          <tr>
+            <td>台積電 ADR</td>
+            <td><a href="https://www.nasdaq.com/market-activity/stocks/tsm" target="_blank" rel="noreferrer">Nasdaq TSM</a></td>
+          </tr>
+          <tr>
+            <td>台股盤勢</td>
+            <td><a href="https://www.twse.com.tw/" target="_blank" rel="noreferrer">TWSE 臺灣證券交易所</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <footer>
+      本儀表板為投資研究與風險控管參考，不構成保證獲利或個別買賣承諾。每日自動信件會附上最新分析與更新後連結。
+    </footer>
+  </main>
+  <script>
+    const storageKey = "twStockPremarketWatchlist";
+    const questionStorageKey = "twStockPremarketQuestions";
+    const form = document.getElementById("watchlistForm");
+    const input = document.getElementById("watchlistInput");
+    const list = document.getElementById("watchlist");
+    const advisorForm = document.getElementById("advisorForm");
+    const advisorInput = document.getElementById("advisorInput");
+    const advisorAnswer = document.getElementById("advisorAnswer");
+    const questionList = document.getElementById("questionList");
+    const clearQuestions = document.getElementById("clearQuestions");
+
+    function loadWatchlist() {
+      try {
+        return JSON.parse(localStorage.getItem(storageKey)) || [];
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function saveWatchlist(items) {
+      localStorage.setItem(storageKey, JSON.stringify(items));
+    }
+
+    function loadQuestions() {
+      try {
+        return JSON.parse(localStorage.getItem(questionStorageKey)) || [];
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function saveQuestions(items) {
+      localStorage.setItem(questionStorageKey, JSON.stringify(items));
+    }
+
+    function renderWatchlist() {
+      const items = loadWatchlist();
+      list.innerHTML = "";
+
+      if (items.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "muted";
+        empty.textContent = "尚未加入自選標的。";
+        list.appendChild(empty);
+        return;
+      }
+
+      items.forEach((item, index) => {
+        const row = document.createElement("div");
+        row.className = "watchlist-item";
+
+        const text = document.createElement("div");
+        const name = document.createElement("strong");
+        name.textContent = item;
+        const note = document.createElement("span");
+        note.textContent = "待每日盤前分析：短線動能、長線基本面、進場與風控條件。";
+        text.append(name, note);
+
+        const remove = document.createElement("button");
+        remove.className = "ghost-button";
+        remove.type = "button";
+        remove.textContent = "移除";
+        remove.addEventListener("click", () => {
+          const nextItems = loadWatchlist().filter((_, itemIndex) => itemIndex !== index);
+          saveWatchlist(nextItems);
+          renderWatchlist();
+        });
+
+        row.append(text, remove);
+        list.appendChild(row);
+      });
+    }
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const value = input.value.trim();
+      if (!value) return;
+
+      const items = loadWatchlist();
+      if (!items.includes(value)) {
+        saveWatchlist([...items, value]);
+      }
+
+      input.value = "";
+      renderWatchlist();
+    });
+
+    function buildAdvice(question) {
+      const lowerQuestion = question.toLowerCase();
+      const points = [];
+
+      if (/短線|當沖|隔日|追|突破|急拉/.test(question)) {
+        points.push("短線先看量價是否同步：若開高急拉但量能沒有延續，建議等回測支撐，不要用情緒追價。");
+        points.push("進場前先定停損：可用盤中支撐、前低或均線作為失守條件，條件沒出現就不要勉強交易。");
+      }
+
+      if (/長線|存股|波段|分批|基本面|營收/.test(question)) {
+        points.push("長線不要只看一天美股利多，請回到營收、毛利率、產業趨勢、估值位置與公司競爭力。");
+        points.push("若是長線布局，建議分批，不要一次買滿；每月用營收與法人態度重新檢查。");
+      }
+
+      if (/台積電|2330|半導體|ai|伺服器|散熱|電源|nvda|nvidia/.test(lowerQuestion)) {
+        points.push("科技與 AI 鏈要同步觀察 Nasdaq、費半、台積電 ADR、NVIDIA 走勢；若彼此背離，部位要保守。");
+      }
+
+      if (/停損|套牢|跌破|風險|避險/.test(question)) {
+        points.push("如果已經跌破原本買進理由，不要只靠攤平處理；先確認是短線洗盤，還是基本面或族群轉弱。");
+      }
+
+      if (/可以買|能買|進場|買進|加碼/.test(question)) {
+        points.push("買進前請先回答三件事：今天買的理由、錯了要在哪裡退出、預計持有多久。三個答案不清楚時先觀望。");
+      }
+
+      if (points.length === 0) {
+        points.push("先把問題拆成三層：大盤環境是否支持、族群是否強於大盤、個股是否有明確進出場條件。");
+        points.push("建議補上標的代號、持有週期、目前是否已持股、可接受停損幅度，我才能給更精準的判斷。");
+      }
+
+      return points;
+    }
+
+    function renderAdvice(question, points) {
+      advisorAnswer.innerHTML = "";
+      const title = document.createElement("strong");
+      title.textContent = "初步建議";
+      const listElement = document.createElement("ul");
+
+      points.forEach((point) => {
+        const item = document.createElement("li");
+        item.textContent = point;
+        listElement.appendChild(item);
+      });
+
+      const note = document.createElement("p");
+      note.className = "muted";
+      note.textContent = "這是本機初步判斷框架，不含即時報價。若要完整建議，請把問題貼給我，我會再用最新資料驗證。";
+
+      advisorAnswer.append(title, listElement, note);
+    }
+
+    function renderQuestions() {
+      const questions = loadQuestions();
+      questionList.innerHTML = "";
+
+      questions.forEach((item) => {
+        const row = document.createElement("div");
+        row.className = "question-item";
+        const question = document.createElement("strong");
+        question.textContent = item.question;
+        const answer = document.createElement("p");
+        answer.textContent = item.summary;
+        row.append(question, answer);
+        questionList.appendChild(row);
+      });
+    }
+
+    advisorForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const question = advisorInput.value.trim();
+      if (!question) return;
+
+      const points = buildAdvice(question);
+      renderAdvice(question, points);
+
+      const questions = loadQuestions();
+      const nextQuestions = [
+        {
+          question,
+          summary: points[0],
+          createdAt: new Date().toISOString()
+        },
+        ...questions
+      ].slice(0, 6);
+
+      saveQuestions(nextQuestions);
+      advisorInput.value = "";
+      renderQuestions();
+    });
+
+    clearQuestions.addEventListener("click", () => {
+      saveQuestions([]);
+      renderQuestions();
+      advisorAnswer.innerHTML = '<strong>初步建議</strong><p class="muted">尚未提問。你可以輸入標的、時間週期、想買或想賣的理由，我會先幫你檢查邏輯。</p>';
+    });
+
+    renderWatchlist();
+    renderQuestions();
+  </script>
+</body>
+</html>
