@@ -1,0 +1,46 @@
+name: Daily premarket dashboard
+
+on:
+  schedule:
+    - cron: "20 0 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-dashboard:
+    runs-on: ubuntu-latest
+    env:
+      SMTP_HOST: ${{ secrets.SMTP_HOST }}
+      SMTP_PORT: ${{ secrets.SMTP_PORT }}
+      SMTP_SECURE: ${{ secrets.SMTP_SECURE }}
+      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_PASS: ${{ secrets.SMTP_PASS }}
+      EMAIL_TO: ${{ secrets.EMAIL_TO }}
+      EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+      DASHBOARD_URL: "https://yenhan0918.github.io/tw-stock-dashboard/"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install --no-package-lock
+
+      - name: Generate dashboard
+        run: npm run generate
+
+      - name: Commit dashboard update
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Daily premarket dashboard update
+          file_pattern: index.html
+
+      - name: Send email summary
+        if: ${{ env.SMTP_HOST != '' && env.SMTP_USER != '' && env.SMTP_PASS != '' }}
+        run: npm run send-email
