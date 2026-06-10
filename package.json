@@ -1,0 +1,13 @@
+{
+  "name": "tw-stock-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "node scripts/generate-dashboard.mjs",
+    "send-email": "node scripts/send-summary-email.mjs"
+  },
+  "dependencies": {
+    "nodemailer": "^6.9.14"
+  }
+}
