@@ -49,6 +49,22 @@ function cssMoveClass(value) {
   return "watch";
 }
 
+function previousDailyClose(result, price) {
+  const closes = result?.indicators?.quote?.[0]?.close
+    ?.map(Number)
+    ?.filter(Number.isFinite) ?? [];
+  if (closes.length >= 2) {
+    const lastClose = closes.at(-1);
+    const priorClose = closes.at(-2);
+    const sameAsLastClose = Number.isFinite(price)
+      && Math.abs(price - lastClose) / Math.max(Math.abs(lastClose), 1) < 0.0005;
+    return sameAsLastClose ? priorClose : lastClose;
+  }
+
+  const meta = result?.meta ?? {};
+  return Number(meta.regularMarketPreviousClose ?? meta.previousClose ?? meta.chartPreviousClose);
+}
+
 async function fetchQuote(symbol, label) {
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=5d&interval=1d`;
   try {
@@ -60,7 +76,7 @@ async function fetchQuote(symbol, label) {
     const result = data.chart?.result?.[0];
     const meta = result?.meta ?? {};
     const price = Number(meta.regularMarketPrice);
-    const previousClose = Number(meta.chartPreviousClose ?? meta.previousClose);
+    const previousClose = previousDailyClose(result, price);
     const changePct =
       Number.isFinite(price) && Number.isFinite(previousClose) && previousClose !== 0
         ? ((price - previousClose) / previousClose) * 100
