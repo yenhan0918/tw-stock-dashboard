@@ -259,8 +259,8 @@ html = replaceRequired(
 );
 html = replaceRequired(
   html,
-  /<ul>\s*<li>若 2330[\s\S]*?<\/li>\s*<li>短線只做[\s\S]*?<\/li>\s*<li>今天先寫[\s\S]*?<\/li>\s*<\/ul>/,
-  `<ul>
+  /(<span class="visual-mark mark-risk">RISK<\/span>\s*<\/div>\s*)<ul>[\s\S]*?<\/ul>/,
+  `$1<ul>
           <li>${watchCondition}</li>
           <li>短線只做有量有承接的族群，長線仍只看基本面、估值與資本支出趨勢。</li>
           <li>今天先寫停損與避險條件，再決定要不要進場，不做攤平式交易。</li>
