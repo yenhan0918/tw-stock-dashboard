@@ -42,6 +42,11 @@ function pct(value) {
   return `${sign}${value.toFixed(2)}%`;
 }
 
+function normalizeYield(value) {
+  if (!Number.isFinite(value)) return NaN;
+  return value > 20 ? value / 10 : value;
+}
+
 function cssMoveClass(value) {
   if (!Number.isFinite(value)) return "watch";
   if (value > 0.15) return "up";
@@ -134,13 +139,13 @@ const sox = quotes.sox.changePct;
 const dow = quotes.dow.changePct;
 const sp500 = quotes.sp500.changePct;
 const dxy = quotes.dxy.price;
-const tnx = quotes.tnx.price;
+const tnx = normalizeYield(quotes.tnx.price);
 const riskScore =
   (Number.isFinite(nasdaq) && nasdaq < -0.6 ? 2 : 0) +
   (Number.isFinite(sox) && sox < -1 ? 2 : 0) +
   (Number.isFinite(sp500) && sp500 < -0.5 ? 1 : 0) +
   (Number.isFinite(dow) && dow < -0.4 ? 1 : 0) +
-  (Number.isFinite(tnx) && tnx > 45 ? 1 : 0) +
+  (Number.isFinite(tnx) && tnx > 4.5 ? 1 : 0) +
   (dataWarning ? 3 : 0);
 
 const stance =
@@ -185,7 +190,7 @@ const metricSox = quoteValue(quotes.sox, previous.sox.value);
 const metricTsm = quoteValue(quotes.tsm, previous.tsm.value);
 const metricMacro =
   quotes.dxy.ok && quotes.tnx.ok
-    ? `DXY ${fmt(quotes.dxy.price)} / 美債 ${fmt(quotes.tnx.price / 10, 2)}%`
+    ? `DXY ${fmt(quotes.dxy.price)} / 美債 ${fmt(normalizeYield(quotes.tnx.price), 2)}%`
     : previous.macro.value;
 
 const sourceRows = [
@@ -219,7 +224,7 @@ html = replaceRequired(
   `<h2>風險燈號</h2>
         <ul>
           <li><span class="watch">匯率：</span>${quotes.dxy.ok ? `美元指數約 ${fmt(quotes.dxy.price)}` : "美元指數資料源未完整回傳"}，若續強會壓抑外資回補與電子股估值。</li>
-          <li><span class="watch">利率：</span>${quotes.tnx.ok ? `美債 10 年殖利率約 ${fmt(quotes.tnx.price / 10, 2)}%` : "美債 10 年殖利率資料源未完整回傳"}，高利率環境仍會壓縮高本益比族群。</li>
+          <li><span class="watch">利率：</span>${quotes.tnx.ok ? `美債 10 年殖利率約 ${fmt(normalizeYield(quotes.tnx.price), 2)}%` : "美債 10 年殖利率資料源未完整回傳"}，高利率環境仍會壓縮高本益比族群。</li>
           <li><span class="watch">事件：</span>盤前先看美股期貨、匯率與台指期；若三者同向偏弱，短線先降低槓桿。</li>
         </ul>`,
   "risk"
