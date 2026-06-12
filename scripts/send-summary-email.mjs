@@ -3,6 +3,8 @@ import nodemailer from "nodemailer";
 
 const summary = JSON.parse(await readFile("daily-summary.json", "utf8"));
 const dashboardUrl = process.env.DASHBOARD_URL || summary.dashboardUrl;
+const versionedDashboardUrl = new URL(dashboardUrl);
+versionedDashboardUrl.searchParams.set("t", summary.generatedAt.replace(/\D/g, ""));
 const to = process.env.EMAIL_TO || summary.emailTo || "yenhan0918@gmail.com";
 const from = process.env.EMAIL_FROM || process.env.SMTP_USER;
 const secure = String(process.env.SMTP_SECURE || "true").toLowerCase() !== "false";
@@ -28,7 +30,7 @@ const lines = [
   "",
   summary.strategyText,
   "",
-  `線上儀表板：${dashboardUrl}`,
+  `線上儀表板：${versionedDashboardUrl.toString()}`,
   "",
   "關鍵數據：",
   `- Nasdaq：${q.nasdaq?.price?.toLocaleString?.("en-US") ?? "--"} / ${Number.isFinite(q.nasdaq?.changePct) ? q.nasdaq.changePct.toFixed(2) + "%" : "--"}`,
@@ -50,7 +52,7 @@ await transporter.sendMail({
     <h2>台股盤前儀表板</h2>
     <p><strong>今日結論：</strong>${summary.stance}</p>
     <p>${summary.strategyText}</p>
-    <p><a href="${dashboardUrl}">開啟線上儀表板</a></p>
+    <p><a href="${versionedDashboardUrl.toString()}">開啟線上儀表板</a></p>
     <h3>短線建議</h3>
     <p>以 1 至 10 個交易日為主，先看開盤後權值股、AI 鏈與金融是否同步承接；未確認前不追第一根。</p>
     <h3>長線建議</h3>

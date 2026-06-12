@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "generate": "node scripts/generate-dashboard.mjs",
+    "wait-for-pages": "node scripts/wait-for-pages.mjs",
     "send-email": "node scripts/send-summary-email.mjs"
   },
   "dependencies": {

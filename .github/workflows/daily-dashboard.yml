@@ -42,6 +42,9 @@ jobs:
           commit_message: Daily premarket dashboard update
           file_pattern: index.html
 
+      - name: Wait for GitHub Pages update
+        run: npm run wait-for-pages
+
       - name: Send email summary
         if: ${{ env.SMTP_HOST != '' && env.SMTP_USER != '' && env.SMTP_PASS != '' }}
         run: npm run send-email
