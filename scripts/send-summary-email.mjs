@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import nodemailer from "nodemailer";
 
 const summary = JSON.parse(await readFile("daily-summary.json", "utf8"));
+const pagesStatus = await readOptionalJson("pages-status.json");
 const dashboardUrl = process.env.DASHBOARD_URL || summary.dashboardUrl;
 const versionedDashboardUrl = new URL(dashboardUrl);
 versionedDashboardUrl.searchParams.set("t", summary.generatedAt.replace(/\D/g, ""));
@@ -12,6 +13,15 @@ const port = Number(process.env.SMTP_PORT || (secure ? 465 : 587));
 
 if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
   throw new Error("Missing SMTP_HOST, SMTP_USER, or SMTP_PASS");
+}
+
+async function readOptionalJson(path) {
+  try {
+    return JSON.parse(await readFile(path, "utf8"));
+  } catch (error) {
+    if (error.code === "ENOENT") return null;
+    throw error;
+  }
 }
 
 const transporter = nodemailer.createTransport({
@@ -25,12 +35,17 @@ const transporter = nodemailer.createTransport({
 });
 
 const q = summary.quotes;
+const pagesVerified = pagesStatus?.ok === true;
+const pagesNote = pagesVerified
+  ? `GitHub Pages 已驗證更新：${pagesStatus.expectedText}`
+  : `GitHub Pages 尚未完成驗證，請先以本信附件 index.html 為當日版本；公開頁可能仍在同步。${pagesStatus?.message ? `狀態：${pagesStatus.message}` : ""}`;
 const lines = [
   `今日結論：${summary.stance}`,
   "",
   summary.strategyText,
   "",
   `線上儀表板：${versionedDashboardUrl.toString()}`,
+  pagesNote,
   "",
   "關鍵數據：",
   `- Nasdaq：${q.nasdaq?.price?.toLocaleString?.("en-US") ?? "--"} / ${Number.isFinite(q.nasdaq?.changePct) ? q.nasdaq.changePct.toFixed(2) + "%" : "--"}`,
@@ -53,12 +68,20 @@ await transporter.sendMail({
     <p><strong>今日結論：</strong>${summary.stance}</p>
     <p>${summary.strategyText}</p>
     <p><a href="${versionedDashboardUrl.toString()}">開啟線上儀表板</a></p>
+    <p style="color:${pagesVerified ? "#00a878" : "#b45309"}">${pagesNote}</p>
     <h3>短線建議</h3>
     <p>以 1 至 10 個交易日為主，先看開盤後權值股、AI 鏈與金融是否同步承接；未確認前不追第一根。</p>
     <h3>長線建議</h3>
     <p>以 3 個月以上為主，只在基本面、估值與產業趨勢仍成立時分批，不把短線反彈當長線理由。</p>
     <p style="color:#5d667a">免責提醒：本信件為投資研究與風險控管參考，不構成保證獲利或個別買賣承諾。</p>
-  </div>`
+  </div>`,
+  attachments: [
+    {
+      filename: "tw-stock-premarket-dashboard.html",
+      path: "index.html",
+      contentType: "text/html"
+    }
+  ]
 });
 
-console.log(JSON.stringify({ ok: true, to, subject: `台股盤前儀表板 - ${summary.generatedAt}` }, null, 2));
+console.log(JSON.stringify({ ok: true, to, subject: `台股盤前儀表板 - ${summary.generatedAt}`, pagesVerified }, null, 2));

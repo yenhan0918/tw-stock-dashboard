@@ -21,6 +21,7 @@ jobs:
       EMAIL_TO: ${{ secrets.EMAIL_TO }}
       EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
       DASHBOARD_URL: "https://yenhan0918.github.io/tw-stock-dashboard/"
+      PAGES_WAIT_STRICT: "false"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,6 +33,19 @@ jobs:
 
       - name: Install dependencies
         run: npm install --no-package-lock
+
+      - name: Validate email configuration
+        run: |
+          missing=0
+          for name in SMTP_HOST SMTP_USER SMTP_PASS; do
+            if [ -z "${!name}" ]; then
+              echo "::error title=Missing email secret::$name is required for automatic Gmail delivery"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
 
       - name: Generate dashboard
         run: npm run generate
@@ -46,5 +60,4 @@ jobs:
         run: npm run wait-for-pages
 
       - name: Send email summary
-        if: ${{ env.SMTP_HOST != '' && env.SMTP_USER != '' && env.SMTP_PASS != '' }}
         run: npm run send-email
