@@ -1,7 +1,13 @@
 import { readFile, writeFile } from "node:fs/promises";
 
 const dashboardUrl = "https://yenhan0918.github.io/tw-stock-dashboard/";
-const emailTo = "yenhan0918@gmail.com";
+const emailRecipients = [
+  "yenhan0918@gmail.com",
+  "jackyman691125@gmail.com",
+  "shian03040508@gmail.com",
+  "alexwen_1@yahoo.com.tw"
+];
+const emailTo = emailRecipients.join(", ");
 const now = new Date();
 const taipeiDate = new Intl.DateTimeFormat("zh-TW", {
   timeZone: "Asia/Taipei",

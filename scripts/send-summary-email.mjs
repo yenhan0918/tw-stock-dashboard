@@ -6,7 +6,14 @@ const pagesStatus = await readOptionalJson("pages-status.json");
 const dashboardUrl = process.env.DASHBOARD_URL || summary.dashboardUrl;
 const versionedDashboardUrl = new URL(dashboardUrl);
 versionedDashboardUrl.searchParams.set("t", summary.generatedAt.replace(/\D/g, ""));
-const to = process.env.EMAIL_TO || summary.emailTo || "yenhan0918@gmail.com";
+const defaultRecipients = [
+  "yenhan0918@gmail.com",
+  "jackyman691125@gmail.com",
+  "shian03040508@gmail.com",
+  "alexwen_1@yahoo.com.tw"
+];
+const configuredRecipients = splitRecipients(process.env.EMAIL_TO || summary.emailTo);
+const to = uniqueRecipients([...configuredRecipients, ...defaultRecipients]).join(", ");
 const from = process.env.EMAIL_FROM || process.env.SMTP_USER;
 const secure = String(process.env.SMTP_SECURE || "true").toLowerCase() !== "false";
 const port = Number(process.env.SMTP_PORT || (secure ? 465 : 587));
@@ -22,6 +29,17 @@ async function readOptionalJson(path) {
     if (error.code === "ENOENT") return null;
     throw error;
   }
+}
+
+function splitRecipients(value) {
+  return String(value || "")
+    .split(/[;,]/)
+    .map((recipient) => recipient.trim())
+    .filter(Boolean);
+}
+
+function uniqueRecipients(recipients) {
+  return [...new Set(recipients)];
 }
 
 const transporter = nodemailer.createTransport({
