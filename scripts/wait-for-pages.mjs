@@ -2,7 +2,12 @@ import { readFile, writeFile } from "node:fs/promises";
 
 const summary = JSON.parse(await readFile("daily-summary.json", "utf8"));
 const dashboardUrl = process.env.DASHBOARD_URL || summary.dashboardUrl;
-const expectedText = `最近更新：${summary.generatedAt}`;
+const expectedTimestamps = [
+  summary.generatedAt,
+  summary.generatedAt.replace(/-/g, "/")
+];
+const expectedTexts = expectedTimestamps.map((value) => `最近更新：${value}`);
+const expectedText = expectedTexts.at(-1);
 const timeoutMs = Number(process.env.PAGES_WAIT_TIMEOUT_MS || 240000);
 const intervalMs = Number(process.env.PAGES_WAIT_INTERVAL_MS || 10000);
 const strict = String(process.env.PAGES_WAIT_STRICT || "true").toLowerCase() !== "false";
@@ -28,8 +33,10 @@ while (Date.now() - startedAt < timeoutMs) {
     });
     const html = await response.text();
 
-    if (response.ok && html.includes(expectedText)) {
-      const status = { ok: true, url: url.toString(), expectedText, checkedAt: new Date().toISOString() };
+    const matchedText = expectedTexts.find((text) => html.includes(text));
+
+    if (response.ok && matchedText) {
+      const status = { ok: true, url: url.toString(), expectedText: matchedText, checkedAt: new Date().toISOString() };
       await writeStatus(status);
       console.log(JSON.stringify(status, null, 2));
       process.exit(0);
