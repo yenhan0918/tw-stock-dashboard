@@ -31,7 +31,12 @@ const symbols = [
   ["tsla", "TSLA", "Tesla"],
   ["dxy", "DX-Y.NYB", "美元指數"],
   ["tnx", "^TNX", "美債 10 年"],
-  ["oil", "CL=F", "WTI 原油"]
+  ["oil", "CL=F", "WTI 原油"],
+  ["gold", "GC=F", "黃金"],
+  ["twd", "TWD=X", "美元兌台幣"],
+  ["es", "ES=F", "S&P 期貨"],
+  ["nq", "NQ=F", "Nasdaq 期貨"],
+  ["ym", "YM=F", "道瓊期貨"]
 ];
 
 function fmt(value, digits = 2) {
@@ -77,7 +82,7 @@ function previousDailyClose(result, price) {
 }
 
 async function fetchQuote(symbol, label) {
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=5d&interval=1d`;
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=5d&interval=1d&includePrePost=true`;
   try {
     const response = await fetch(url, {
       headers: { "User-Agent": "tw-stock-dashboard/1.0" }
@@ -93,7 +98,9 @@ async function fetchQuote(symbol, label) {
         ? ((price - previousClose) / previousClose) * 100
         : NaN;
 
-    return { symbol, label, price, previousClose, changePct, ok: true, url };
+    const timestamps = result?.timestamp ?? [];
+    const timestamp = Number(meta.regularMarketTime ?? timestamps.at(-1));
+    return { symbol, label, price, previousClose, changePct, timestamp, ok: true, url };
   } catch (error) {
     return { symbol, label, price: NaN, previousClose: NaN, changePct: NaN, ok: false, error: error.message, url };
   }
@@ -146,13 +153,39 @@ const dow = quotes.dow.changePct;
 const sp500 = quotes.sp500.changePct;
 const dxy = quotes.dxy.price;
 const tnx = normalizeYield(quotes.tnx.price);
+const futuresAverage = [quotes.es.changePct, quotes.nq.changePct, quotes.ym.changePct]
+  .filter(Number.isFinite)
+  .reduce((total, value, _, values) => total + value / values.length, 0);
 const riskScore =
   (Number.isFinite(nasdaq) && nasdaq < -0.6 ? 2 : 0) +
   (Number.isFinite(sox) && sox < -1 ? 2 : 0) +
   (Number.isFinite(sp500) && sp500 < -0.5 ? 1 : 0) +
   (Number.isFinite(dow) && dow < -0.4 ? 1 : 0) +
   (Number.isFinite(tnx) && tnx > 4.5 ? 1 : 0) +
+  (Number.isFinite(futuresAverage) && futuresAverage < -0.2 ? 1 : 0) +
   (dataWarning ? 3 : 0);
+
+function taipeiDateTime(epochSeconds, dateOnly = false) {
+  if (!Number.isFinite(epochSeconds)) return null;
+  const options = {
+    timeZone: "Asia/Taipei",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    ...(dateOnly ? {} : { hour: "2-digit", minute: "2-digit", hour12: false })
+  };
+  return new Intl.DateTimeFormat("zh-TW", options).format(new Date(epochSeconds * 1000));
+}
+
+function usMarketDate(epochSeconds) {
+  if (!Number.isFinite(epochSeconds)) return null;
+  return new Intl.DateTimeFormat("zh-TW", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(new Date(epochSeconds * 1000));
+}
 
 const stance =
   dataWarning
@@ -340,7 +373,9 @@ const summary = {
   riskScore,
   dataWarning,
   quotes,
-  sourceRows
+  latestCloseDate: usMarketDate(quotes.nasdaq.timestamp),
+  futuresTickAt: taipeiDateTime(quotes.nq.timestamp),
+  sourceLinks: sourceRows.map(([label, url]) => ({ label, url }))
 };
 
 await writeFile("daily-summary.json", `${JSON.stringify(summary, null, 2)}\n`);
